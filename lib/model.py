@@ -68,6 +68,8 @@ def game_is_month_day(string): #True if game's date contains month and day (ex: 
     else:
         return False
 
+
+
 def _date_parser(string):
     if 'Today' in string:
         return get_formatted_date()
