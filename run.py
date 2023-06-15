@@ -1,10 +1,10 @@
 import multiprocessing
 import time
-from lib import pointsbet, resortsworldbet, betrivers, fanduel
+from lib import pointsbet, resortsworldbet, betrivers, fanduel, betmgm
 
 # Define a list of functions to run in separate processes
-# tasks = [pointsbet._parse, resortsworldbet._parse, betrivers._parse, fanduel._parse]
-tasks = [fanduel._parse]
+tasks = [pointsbet._parse, resortsworldbet._parse, betrivers._parse, betmgm._parse]
+# tasks = [fanduel._parse]
 # Create a queue
 queue = multiprocessing.Queue()
 
@@ -20,10 +20,12 @@ with multiprocessing.Pool() as pool:
     result_objects = pool.map_async(run_task, tasks)
 
     # Print the queue contents every time it's updated
+    # TODO filename: timestamp
+    #      content: dictionarify
     while True:
         while not queue.empty():
             print(queue.get())
-            print("///////////////////////////////////////////////////////////////\n")
+            print("/////////////////////////////////////////////////////////////////////////////////////////////////////\n")
         
         # Check if all tasks have finished
         if result_objects.ready():

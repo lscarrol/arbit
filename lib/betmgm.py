@@ -60,30 +60,26 @@ def betrivers_date_parser(string):
 
 
 def _parse_matchup(matchup, names, odds, dates):
-    #check if the word moneyline is anywhere in the text
-    if "WIN" in matchup.text:
-        #get the odds
-        ml_odds_elements = matchup.find_elements(By.XPATH, ".//button[contains(@aria-label, 'Moneyline')]")
-        if len(ml_odds_elements) == 2: #only if there are 2 elements in the money line odds
-            #get the money line odds
-            for ml_odds_element in ml_odds_elements:
-                ml_odds_elements_text = ml_odds_element.text
-                odds.append(ml_odds_elements_text)
-            #get the teams
-            teams = matchup.find_elements(By.XPATH, './/div[@class="sc-ZqiCb jxBoEZ"]')
-            for team in teams:
-                team_text = team.text
-                team_text = MLB_NAME_STORE_MAP[team_text]
-                names.append(team_text)
-            #get the date
-            if 'LIVE' in matchup.text:
-                dates.append('LIVE')
-            else:
-                dates_elements = matchup.find_elements(By.XPATH, './/time[@role="timer"]')
-                for date_element in dates_elements:
-                    date_text = date_element.text
-                    date_text = betrivers_date_parser(date_text)
-                    dates.append(date_text)
+    ml_odds_elements = matchup.find_elements(By.XPATH, ".//ms-event-pick")
+    ml_odds_elements_text = [element.text for element in ml_odds_elements if model._is_ml_odds(element.text)]
+    if len(ml_odds_elements_text) == 2: #only if there are 2 elements in the money line odds
+        #get the money line odds
+        odds.extend(ml_odds_elements_text)
+        #get the teams
+        teams = matchup.find_elements(By.XPATH, './/div[@class="participant"]')
+        for team in teams:
+            team_text = team.text
+            #team_text = MLB_NAME_STORE_MAP[team_text]
+            names.append(team_text)
+        #get the date
+        if 'LIVE' in matchup.text:
+            dates.append('LIVE')
+        else:
+            dates_elements = matchup.find_elements(By.XPATH, './/ms-event-timer')
+            for date_element in dates_elements:
+                date_text = date_element.text
+                date_text = betrivers_date_parser(date_text)
+                dates.append(date_text)
 
 def _parse(queue):
     # Set Chrome options
@@ -91,11 +87,11 @@ def _parse(queue):
     #options.add_argument("--headless")  # Set to "--headless" for running in the background
     options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.93 Safari/537.36")
     driver = webdriver.Chrome(options=options)
-    driver.get("https://ny.betrivers.com/?page=sportsbook&group=1000093616&type=matches")
-    old_data = driver.find_elements(By.XPATH, '//div[@class="sc-cMuvZY enZMOr"]')
+    driver.get("https://sports.ny.betmgm.com/en/sports/baseball-23/betting/usa-9/mlb-75")
+    old_data = driver.find_elements(By.XPATH, '//ms-six-pack-event')
     while True:
         try:
-            new_data = driver.find_elements(By.XPATH, '//div[@class="sc-cMuvZY enZMOr"]')
+            new_data = driver.find_elements(By.XPATH, '//ms-six-pack-event')
             if new_data != old_data:
                 names = []
                 odds = []
@@ -110,10 +106,10 @@ def _parse(queue):
                     odds_1 = odds[i * 2]
                     odds_2 = odds[i * 2 + 1]
                     output.append([date, team_1, odds_1, team_2, odds_2])
-                queue.put(("betrivers", output))
+                queue.put(("betmgm", output))
 
             old_data = new_data
             time.sleep(1)
 
         except Exception as e:
-            print(f"An error occurred in betrivers: {e}")
+            print(f"An error occurred in betmgm: {e}")
